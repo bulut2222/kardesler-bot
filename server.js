@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const http = require('http');
 require('dotenv').config();
 
-// 1. RENDER'I SUSTURAN SUNUCU
+// 1. RENDER'I AKTİF TUTAN SUNUCU
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot Aktif\n');
@@ -21,36 +21,27 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Doğrudan veri çekme denemesi başlatılıyor...");
+    console.log("🔄 Bigpara üzerinden taze veriler çekiliyor...");
     
-    // Zyte'ı aradan çıkarıp doğrudan Haremaltın'a gidiyoruz
-    const response = await axios.post('https://www.haremaltin.com/dashboard/ajax/doviz', 
-      'dil_kodu=tr', 
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'X-Requested-With': 'XMLHttpRequest',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://www.haremaltin.com/'
-        }
-      }
-    );
+    // Bigpara'nın halka açık ve hızlı veri kaynağı
+    const response = await axios.get('https://proweb.bigpara.com/altin/piyasa/canli');
 
     if (response.data && response.data.data) {
+      // Bigpara verilerini senin Firebase yapına uygun hale getiriyoruz
       await db.ref('AltinGecmisi_Canli').set({
-        veriler: response.data.data,
+        veriler: response.data.data, 
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ BAŞARI: Veriler Firebase'e uçtu! - " + new Date().toLocaleTimeString());
+      console.log("✅ BAŞARI: Bigpara verileri Firebase'e uçtu! - " + new Date().toLocaleTimeString());
     } else {
-      console.log("⚠️ Veri boş geldi, site yapısı değişmiş olabilir.");
+      console.log("⚠️ Veri boş geldi veya format değişti.");
     }
   } catch (error) {
     console.error("❌ Hata:", error.message);
   }
 }
 
-// 1 dakikada bir çalıştır
+// 60 saniyede bir güncelle (Yeterli bir süre)
 setInterval(verileriCek, 60000);
 verileriCek(); 
-console.log("🚀 Sade Bot Başlatıldı...");
+console.log("🚀 Bigpara Botu Başlatıldı...");
