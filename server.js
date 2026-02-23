@@ -25,13 +25,15 @@ async function verileriCek() {
     
     const response = await axios.post('https://api.zyte.com/v1/extract', {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
-      httpRequestMethod: 'POST',
+      httpRequestMethod: 'POST', // POST metodu şart
+      // BODY kısmını en sade haliyle gönderiyoruz:
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      browserHtml: true, // Tarayıcıyı aktif eder
-      httpResponseBody: true
+      httpResponseBody: true,
+      // 422 hatasını aşmak için Tarayıcıyı KAPATIYORUZ (Sadece HTTP isteği atacağız)
+      browserHtml: false 
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
-      timeout: 60000
+      timeout: 30000
     });
 
     const body = Buffer.from(response.data.httpResponseBody, 'base64').toString();
@@ -45,12 +47,9 @@ async function verileriCek() {
       console.log("✅ BAŞARI: Firebase güncellendi - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
-    console.error("❌ Hata:");
-    if (error.response) {
-      console.error(JSON.stringify(error.response.data));
-    } else {
-      console.error(error.message);
-    }
+    // Hatayı daha detaylı görmek için:
+    const errorDetail = error.response ? JSON.stringify(error.response.data) : error.message;
+    console.error("❌ Hata Detayı:", errorDetail);
   }
 }
 
