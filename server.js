@@ -19,27 +19,31 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Veri çekme işlemi başlatıldı...");
+    console.log("🔄 Veri çekme denemesi başlatılıyor (Süre uzatıldı)...");
     
-    // Trunçgil API'sine AllOrigins üzerinden güvenli erişim
-    const response = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent('https://finans.truncgil.com/v4/today.json')}`);
+    // Zaman aşımını 40 saniyeye çıkardık ve rastgele bir sayı ekleyerek Trunçgil'i şaşırttık
+    const url = `https://finans.truncgil.com/v4/today.json?nocache=${Date.now()}`;
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     
-    // AllOrigins veriyi "contents" içinde string olarak gönderir, onu objeye çeviriyoruz
-    const data = JSON.parse(response.data.contents);
-
-    if (data && data["Update_Date"]) {
+    const response = await axios.get(proxy, { 
+        timeout: 40000, // 40 saniye sabırla bekle
+        headers: { 'Accept': 'application/json' }
+    });
+    
+    if (response.data && response.data.contents) {
+      const data = JSON.parse(response.data.contents);
       let temizVeriler = {};
       
+      const temizle = (val) => {
+        if (!val) return 0;
+        let s = val.toString().replace('%', '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(s) || 0;
+      };
+
       for (let key in data) {
         if (key === "Update_Date") continue;
         
         let item = data[key];
-        const temizle = (val) => {
-          if (!val) return 0;
-          return parseFloat(val.toString().replace('%', '').replace(/\./g, '').replace(',', '.')) || 0;
-        };
-
-        // Firebase için uygun hale getirilen isimler
         let fbKey = key.replace(/[.#$\[\]]/g, '');
 
         temizVeriler[fbKey] = {
@@ -53,13 +57,17 @@ async function verileriCek() {
         veriler: temizVeriler,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ BAŞARILI: Veriler Firebase'e aktarıldı! - " + new Date().toLocaleTimeString());
+      console.log("✅ BAŞARILI: Veriler 40 saniyelik sabrın sonunda Firebase'e ulaştı! - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
-    console.error("❌ Hata oluştu:", error.message);
+    if (error.code === 'ECONNABORTED') {
+        console.error("⚠️ Trunçgil hala çok yavaş, bir sonraki dakikada tekrar deneyeceğim.");
+    } else {
+        console.error("❌ Hata:", error.message);
+    }
   }
 }
 
 setInterval(verileriCek, 60000);
 verileriCek();
-console.log("🚀 Bot her dakika güncellenmek üzere hazır!");
+console.log("🚀 Bot sabır moduyla başlatıldı!");
