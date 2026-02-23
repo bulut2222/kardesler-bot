@@ -29,6 +29,8 @@ async function verileriCek() {
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
       httpResponseBody: true
+      browserHtml: true, // Bunu ekliyoruz: Sayfayı gerçek bir tarayıcı gibi açar
+javascript: true   // Bunu ekliyoruz: JavaScript'in yüklenmesini bekler
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' }
     });
