@@ -19,55 +19,55 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Veri çekme denemesi başlatılıyor (Süre uzatıldı)...");
+    console.log("🔄 Kesin veri çekme işlemi başlatıldı...");
     
-    // Zaman aşımını 40 saniyeye çıkardık ve rastgele bir sayı ekleyerek Trunçgil'i şaşırttık
-    const url = `https://finans.truncgil.com/v4/today.json?nocache=${Date.now()}`;
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    
-    const response = await axios.get(proxy, { 
-        timeout: 40000, // 40 saniye sabırla bekle
-        headers: { 'Accept': 'application/json' }
+    // Engelleme yapmayan, hızlı ve stabil yeni kaynak
+    const response = await axios.get('https://api.genelpara.com/embed/altin.json', {
+        timeout: 10000 
     });
-    
-    if (response.data && response.data.contents) {
-      const data = JSON.parse(response.data.contents);
+
+    if (response.data) {
+      let data = response.data;
       let temizVeriler = {};
       
       const temizle = (val) => {
         if (!val) return 0;
-        let s = val.toString().replace('%', '').replace(/\./g, '').replace(',', '.');
-        return parseFloat(s) || 0;
+        return parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0;
       };
 
-      for (let key in data) {
-        if (key === "Update_Date") continue;
-        
-        let item = data[key];
-        let fbKey = key.replace(/[.#$\[\]]/g, '');
+      // GenelPara formatını senin script.js'ye uygun hale getiriyoruz
+      const mapping = {
+          "GA": "GRAMALTIN",
+          "C": "CEYREKALTIN",
+          "Y": "YARIMALTIN",
+          "T": "TAMALTIN",
+          "A": "ATAALTIN",
+          "USD": "USD",
+          "EUR": "EUR",
+          "ONS": "ONS"
+      };
 
-        temizVeriler[fbKey] = {
-          Buying: temizle(item.Alış),
-          Selling: temizle(item.Satış),
-          Change: temizle(item.Değişim)
-        };
+      for (let key in mapping) {
+        if (data[key]) {
+          let fbKey = mapping[key];
+          temizVeriler[fbKey] = {
+            Buying: temizle(data[key].alis),
+            Selling: temizle(data[key].satis),
+            Change: temizle(data[key].degisim)
+          };
+        }
       }
 
       await db.ref('AltinGecmisi_Canli').set({
         veriler: temizVeriler,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ BAŞARILI: Veriler 40 saniyelik sabrın sonunda Firebase'e ulaştı! - " + new Date().toLocaleTimeString());
+      console.log("✅ ZAFER: Veriler saniyeler içinde Firebase'e işlendi! - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
-    if (error.code === 'ECONNABORTED') {
-        console.error("⚠️ Trunçgil hala çok yavaş, bir sonraki dakikada tekrar deneyeceğim.");
-    } else {
-        console.error("❌ Hata:", error.message);
-    }
+    console.error("❌ Hata:", error.message);
   }
 }
 
 setInterval(verileriCek, 60000);
 verileriCek();
-console.log("🚀 Bot sabır moduyla başlatıldı!");
