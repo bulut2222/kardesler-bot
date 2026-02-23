@@ -28,21 +28,16 @@ async function verileriCek() {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      // SİHİRLİ AYARLAR BURADA:
-      browserHtml: true,
-      javascript: true,
-      automatedBrowser: true, // Gerçek bir tarayıcı motoru kullanır
-      requestHeaders: { 
-        "referer": "https://www.haremaltin.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-      }
+      // Sadece en gerekli 2 ayarı bırakıyoruz:
+      browserHtml: true, 
+      httpResponseBody: true
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
-      timeout: 60000 // 1 dakikaya çıkardık, tarayıcı açılması zaman alır
+      timeout: 30000
     });
 
-    const data = JSON.parse(Buffer.from(response.data.httpResponseBody, 'base64').toString());
-    const guncel = data.data;
+    const responseData = JSON.parse(Buffer.from(response.data.httpResponseBody, 'base64').toString());
+    const guncel = responseData.data;
 
     await db.ref('AltinGecmisi_Canli').set({
       veriler: guncel,
@@ -52,8 +47,8 @@ async function verileriCek() {
     console.log("Canlı veriler başarıyla güncellendi.");
   } catch (error) {
     console.error("Hata oluştu:", error.message);
-  } 
+  }
 }
 
 // 3 saniyede bir çalıştır
-setInterval(verileriCek, 3000);
+setInterval(verileriCek, 15000);
