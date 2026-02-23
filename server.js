@@ -23,12 +23,15 @@ async function verileriCek() {
   try {
     console.log("🔄 Veri çekme denemesi başlatılıyor...");
     
-    const response = await axios.post('https://api.zyte.com/v1/extract', {
+  const response = await axios.post('https://api.zyte.com/v1/extract', {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      browserHtml: true, // Tarayıcı gibi davranması için şart
-      javascript: true,
+      // SİHİRLİ AYAR:
+      experimental: {
+        "antiBot": true 
+      },
+      browserHtml: true,
       httpResponseBody: true
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
