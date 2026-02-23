@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const http = require('http');
 require('dotenv').config();
 
-// Render'ı mutlu eden sunucu
+// Render'ın kapanmasını engelleyen sunucu
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot Aktif\n');
@@ -20,23 +20,30 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Veri çekiliyor...");
+    console.log("🔄 CollectAPI'den veriler çekiliyor...");
     
-    // Bigpara'nın en güncel ve kolay JSON kaynağı
-    const response = await axios.get('https://finans.hurriyet.com.tr/api/v1/altin/guncel');
+    const response = await axios.get('https://api.collectapi.com/economy/goldPrice', {
+      headers: {
+        'content-type': 'application/json',
+        'authorization': process.env.COLLECTAPI_KEY // Render'daki anahtarı buraya otomatik çeker
+      }
+    });
 
-    if (response.data) {
+    if (response.data && response.data.success) {
       await db.ref('AltinGecmisi_Canli').set({
-        veriler: response.data,
+        veriler: response.data.result,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! - " + new Date().toLocaleTimeString());
+      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! Siten artık canlı. - " + new Date().toLocaleTimeString());
+    } else {
+      console.log("⚠️ Veri geldi ama beklenen formatta değil:", response.data);
     }
   } catch (error) {
-    console.error("❌ Hata:", error.message);
+    console.error("❌ Hata Detayı:", error.response ? JSON.stringify(error.response.data) : error.message);
   }
 }
 
+// 1 dakikada bir güncelle
 setInterval(verileriCek, 60000);
-verileriCek(); 
-console.log("🚀 Bot hazır ve nazır!");
+verileriCek();
+console.log("🚀 CollectAPI Botu Başlatıldı...");
