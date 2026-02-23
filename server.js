@@ -21,19 +21,17 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Şifresiz açık kaynaktan (GenelPara) veriler çekiliyor...");
+    console.log("🔄 Şifresiz Trunçgil API'den taze veriler çekiliyor...");
     
-    // ŞİFRE YOK, ÜYELİK YOK, DOĞRUDAN LİNK:
-    const response = await axios.get('https://api.genelpara.com/embed/altin.json');
+    // ŞİFRE YOK, ÜYELİK YOK, 404 YOK:
+    const response = await axios.get('https://finans.truncgil.com/v4/today.json');
 
     if (response.data) {
       await db.ref('AltinGecmisi_Canli').set({
         veriler: response.data,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! Siten artık canlı.");
-    } else {
-      console.log("⚠️ Veri boş geldi.");
+      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
     console.error("❌ Hata:", error.message);
@@ -43,4 +41,4 @@ async function verileriCek() {
 // 1 dakikada bir güncelle
 setInterval(verileriCek, 60000);
 verileriCek();
-console.log("🚀 Şifresiz Bot Başlatıldı...");
+console.log("🚀 Trunçgil Bot Başlatıldı...");
