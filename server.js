@@ -3,12 +3,13 @@ const admin = require('firebase-admin');
 const http = require('http');
 require('dotenv').config();
 
-// Render'ı kandıran sunucu
+// 1. RENDER'I SUSTURAN SUNUCU
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot Aktif\n');
 }).listen(process.env.PORT || 10000);
 
+// 2. FIREBASE BAĞLANTISI
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -20,42 +21,36 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Zırhlı istek başlatılıyor (Ban aşma modu)...");
+    console.log("🔄 Doğrudan veri çekme denemesi başlatılıyor...");
     
-    const response = await axios.post('https://api.zyte.com/v1/extract', {
-      url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
-      httpRequestMethod: 'POST',
-      httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      // BAN AŞMAK İÇİN KRİTİK AYARLAR:
-      customHttpRequestHeaders: [
-        { "name": "accept", "value": "application/json, text/javascript, */*; q=0.01" },
-        { "name": "x-requested-with", "value": "XMLHttpRequest" },
-        { "name": "content-type", "value": "application/x-www-form-urlencoded; charset=UTF-8" },
-        { "name": "referer", "value": "https://www.haremaltin.com/" }
-      ],
-      httpResponseBody: true,
-      browserHtml: false // API ucu olduğu için tarayıcı açmıyoruz, kafasını karıştırmayalım
-    }, {
-      auth: { username: process.env.ZYTE_API_KEY, password: '' },
-      timeout: 30000
-    });
+    // Zyte'ı aradan çıkarıp doğrudan Haremaltın'a gidiyoruz
+    const response = await axios.post('https://www.haremaltin.com/dashboard/ajax/doviz', 
+      'dil_kodu=tr', 
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.haremaltin.com/'
+        }
+      }
+    );
 
-    const body = Buffer.from(response.data.httpResponseBody, 'base64').toString();
-    const data = JSON.parse(body);
-    
-    if (data && data.data) {
+    if (response.data && response.data.data) {
       await db.ref('AltinGecmisi_Canli').set({
-        veriler: data.data,
+        veriler: response.data.data,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ BAŞARI: Ban aşıldı ve Firebase güncellendi!");
+      console.log("✅ BAŞARI: Veriler Firebase'e uçtu! - " + new Date().toLocaleTimeString());
+    } else {
+      console.log("⚠️ Veri boş geldi, site yapısı değişmiş olabilir.");
     }
   } catch (error) {
-    const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
-    console.error("❌ Hata Detayı:", errorMsg);
+    console.error("❌ Hata:", error.message);
   }
 }
 
-// 60 saniyede bir çalıştır
+// 1 dakikada bir çalıştır
 setInterval(verileriCek, 60000);
-verileriCek();
+verileriCek(); 
+console.log("🚀 Sade Bot Başlatıldı...");
