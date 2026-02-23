@@ -26,7 +26,7 @@ async function verileriCek() {
       headers: {
         'content-type': 'application/json',
         // ŞİFREYİ DOĞRUDAN BURAYA YAZDIK, RENDER'A İHTİYAÇ KALMADI:
-        'authorization': 'apikey03f64SaoyP5L5EqcT0e5vQ:4EXUnUZwy837aDsS8druNX'
+        'authorization': '03f64SaoyP5L5EqcT0e5vQ:4EXUnUZwy837aDsS8druNX'
       }
     });
 
