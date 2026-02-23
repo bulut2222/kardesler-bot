@@ -25,11 +25,14 @@ async function verileriCek() {
     
     const response = await axios.post('https://api.zyte.com/v1/extract', {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
-      httpRequestMethod: 'POST', // POST metodu şart
-      // BODY kısmını en sade haliyle gönderiyoruz:
+      httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
+      // KRİTİK EKLEME:
+      customHttpRequestHeaders: [
+        { "name": "Content-Type", "value": "application/x-www-form-urlencoded" },
+        { "name": "X-Requested-With", "value": "XMLHttpRequest" }
+      ],
       httpResponseBody: true,
-      // 422 hatasını aşmak için Tarayıcıyı KAPATIYORUZ (Sadece HTTP isteği atacağız)
       browserHtml: false 
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
