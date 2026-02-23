@@ -1,15 +1,14 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
-const http = require('http'); // Render'ı kandırmak için gerekli
+const http = require('http');
 require('dotenv').config();
 
-// 1. RENDER PORT HATASINI ÇÖZMEK İÇİN SAHTE SUNUCU
+// Render Port Hatası Çözümü
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Bot hayatta!\n');
+  res.end('Bot Aktif\n');
 }).listen(process.env.PORT || 10000);
 
-// 2. FIREBASE BAĞLANTISI
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -21,17 +20,12 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Veri çekme denemesi başlatılıyor...");
-    
-  const response = await axios.post('https://api.zyte.com/v1/extract', {
+    const response = await axios.post('https://api.zyte.com/v1/extract', {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      // SİHİRLİ AYAR:
-      experimental: {
-        "antiBot": true 
-      },
       browserHtml: true,
+      javascript: true,
       httpResponseBody: true
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
@@ -49,11 +43,11 @@ async function verileriCek() {
       console.log("✅ BAŞARI: Firebase güncellendi - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
-    console.error("❌ Hata Detayı:", error.response ? JSON.stringify(error.response.data) : error.message);
+    console.error("❌ Hata:", error.message);
   }
 }
 
-// 60 saniyede bir çalıştır (Daha güvenli bir aralık)
+// 60 saniyede bir çalıştır (Krediyi idareli kullanmak için)
 setInterval(verileriCek, 60000);
-verileriCek(); // İlk çalıştırmayı hemen yap
-console.log("🚀 Bot ve Sahte Sunucu başlatıldı...");
+verileriCek(); 
+console.log("🚀 Bot başlatıldı...");
