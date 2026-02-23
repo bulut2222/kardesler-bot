@@ -21,17 +21,15 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Trunçgil API'den İnsan Taklidiyle (Kimlikli) veriler çekiliyor...");
+    console.log("🔄 Kapalı Çarşı API'den veriler çekiliyor (Engelsiz Kaynak)...");
     
-    // Karşı tarafı kandırmak için gerçek bir tarayıcı kimliği gönderiyoruz
-    const response = await axios.get('https://finans.truncgil.com/v4/today.json', {
+    // Render'ı engellemeyen ve web sitenle tam uyumlu çalışan yeni kaynak
+    const response = await axios.get('https://kapalicarsi.apiluna.org/', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Connection': 'keep-alive'
+        'Accept': 'application/json, text/plain, */*'
       },
-      timeout: 15000 // 15 saniye bekleme süresi
+      timeout: 20000 // Soket hatası (bağlantı kopması) olmasın diye süreyi 20 saniyeye çıkardık
     });
 
     if (response.data) {
@@ -39,7 +37,7 @@ async function verileriCek() {
         veriler: response.data,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! Siten artık canlı. - " + new Date().toLocaleTimeString());
+      console.log("✅ ZAFER: Veriler Firebase'e TERTEMİZ yazıldı! Siten artık canlı. - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
     console.error("❌ Hata:", error.message);
@@ -49,4 +47,4 @@ async function verileriCek() {
 // 1 dakikada bir güncelle
 setInterval(verileriCek, 60000);
 verileriCek();
-console.log("🚀 İnsan Görünümlü Bot Başlatıldı...");
+console.log("🚀 Kapalı Çarşı Bot Başlatıldı...");
