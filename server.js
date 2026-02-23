@@ -25,7 +25,8 @@ async function verileriCek() {
     const response = await axios.get('https://api.collectapi.com/economy/goldPrice', {
       headers: {
         'content-type': 'application/json',
-        'authorization': process.env.COLLECTAPI_KEY // Render'daki anahtarı buraya otomatik çeker
+        // ŞİFREYİ DOĞRUDAN BURAYA YAZDIK, RENDER'A İHTİYAÇ KALMADI:
+        'authorization': 'apikey03f64SaoyP5L5EqcT0e5vQ:4EXUnUZwy837aDsS8druNX'
       }
     });
 
