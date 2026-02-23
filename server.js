@@ -3,13 +3,12 @@ const admin = require('firebase-admin');
 const http = require('http');
 require('dotenv').config();
 
-// 1. RENDER'I AKTİF TUTAN SUNUCU
+// Render'ı mutlu eden sunucu
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot Aktif\n');
 }).listen(process.env.PORT || 10000);
 
-// 2. FIREBASE BAĞLANTISI
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -21,27 +20,23 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Bigpara üzerinden taze veriler çekiliyor...");
+    console.log("🔄 Veri çekiliyor...");
     
-    // Bigpara'nın halka açık ve hızlı veri kaynağı
-    const response = await axios.get('https://proweb.bigpara.com/altin/piyasa/canli');
+    // Bigpara'nın en güncel ve kolay JSON kaynağı
+    const response = await axios.get('https://finans.hurriyet.com.tr/api/v1/altin/guncel');
 
-    if (response.data && response.data.data) {
-      // Bigpara verilerini senin Firebase yapına uygun hale getiriyoruz
+    if (response.data) {
       await db.ref('AltinGecmisi_Canli').set({
-        veriler: response.data.data, 
+        veriler: response.data,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ BAŞARI: Bigpara verileri Firebase'e uçtu! - " + new Date().toLocaleTimeString());
-    } else {
-      console.log("⚠️ Veri boş geldi veya format değişti.");
+      console.log("✅ ZAFER: Veriler Firebase'e yazıldı! - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
     console.error("❌ Hata:", error.message);
   }
 }
 
-// 60 saniyede bir güncelle (Yeterli bir süre)
 setInterval(verileriCek, 60000);
 verileriCek(); 
-console.log("🚀 Bigpara Botu Başlatıldı...");
+console.log("🚀 Bot hazır ve nazır!");
