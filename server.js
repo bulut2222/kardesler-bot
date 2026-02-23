@@ -19,48 +19,54 @@ const db = admin.database();
 
 async function verileriCek() {
   try {
-    console.log("🔄 Kesin veri çekme işlemi başlatıldı...");
+    console.log("🔄 Veri çekme işlemi başlatıldı...");
     
-    // Dünyanın en stabil veri kaynaklarından biri
-    const response = await axios.get('https://api.doviz.com/infos/v1', { timeout: 10000 });
+    // Asla kapanmayan ve botları engellemeyen en temiz kaynak
+    const response = await axios.get('https://api.altin.in/canli/altin', {
+        timeout: 10000 
+    });
 
     if (response.data) {
-      let rawData = response.data;
+      let data = response.data;
       let temizVeriler = {};
       
-      // Gelen karmaşık veriyi senin web sitenin (script.js) anlayacağı dile çeviriyoruz
-      const mapping = {
-          'gram-altin': 'GRAMALTIN',
-          'ceyrek-altin': 'CEYREKALTIN',
-          'yarim-altin': 'YARIMALTIN',
-          'tam-altin': 'TAMALTIN',
-          'cumhuriyet-altini': 'CUMHURIYETALTINI',
-          'ata-altin': 'ATAALTIN',
-          'resat-altin': 'RESATALTIN',
-          '22-ayar-bilezik': '22AYARBILEZIK',
-          '14-ayar-altin': '14AYARALTIN',
-          'ons': 'ONS',
-          'USD': 'USD',
-          'EUR': 'EUR'
+      const temizle = (val) => {
+        if (!val) return 0;
+        return parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0;
       };
 
-      // Verileri tek tek ayıklıyoruz
-      rawData.forEach(item => {
-          if (mapping[item.slug]) {
-              let fbKey = mapping[item.slug];
-              temizVeriler[fbKey] = {
-                  Buying: parseFloat(item.buying) || 0,
-                  Selling: parseFloat(item.selling) || 0,
-                  Change: parseFloat(item.change_rate) || 0
-              };
-          }
-      });
+      // Altin.in formatını senin script.js'ye (GRAMALTIN, CEYREKALTIN) göre eşliyoruz
+      const mapping = {
+          'gram': 'GRAMALTIN',
+          'ceyrek': 'CEYREKALTIN',
+          'yarim': 'YARIMALTIN',
+          'tam': 'TAMALTIN',
+          'cumhuriyet': 'CUMHURIYETALTINI',
+          'ata': 'ATAALTIN',
+          'resat': 'RESATALTIN',
+          '22ayar': '22AYARBILEZIK',
+          '14ayar': '14AYARALTIN',
+          'usd': 'USD',
+          'eur': 'EUR',
+          'ons': 'ONS'
+      };
+
+      for (let key in mapping) {
+        if (data[key]) {
+          let fbKey = mapping[key];
+          temizVeriler[fbKey] = {
+            Buying: temizle(data[key].alis),
+            Selling: temizle(data[key].satis),
+            Change: temizle(data[key].degisim || 0)
+          };
+        }
+      }
 
       await db.ref('AltinGecmisi_Canli').set({
         veriler: temizVeriler,
         sonGuncelleme: admin.database.ServerValue.TIMESTAMP
       });
-      console.log("✅ ZAFER: Veriler anında Firebase'e işlendi! - " + new Date().toLocaleTimeString());
+      console.log("✅ ZAFER: Veriler Firebase'e ulaştı! Siten artık dolacak. - " + new Date().toLocaleTimeString());
     }
   } catch (error) {
     console.error("❌ Hata:", error.message);
@@ -69,4 +75,3 @@ async function verileriCek() {
 
 setInterval(verileriCek, 60000);
 verileriCek();
-console.log("🚀 Bot sarsılmaz modda başlatıldı!");
