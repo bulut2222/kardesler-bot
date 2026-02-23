@@ -28,17 +28,19 @@ async function verileriCek() {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      httpResponseBody: true
-      browserHtml: true, // Bunu ekliyoruz: Sayfayı gerçek bir tarayıcı gibi açar
-javascript: true   // Bunu ekliyoruz: JavaScript'in yüklenmesini bekler
+      httpResponseBody: true, // Virgül hatası giderildi
+      browserHtml: true, 
+      javascript: true,
+      requestHeaders: { "referer": "https://www.haremaltin.com/" } // "Haremaltin içinden geliyorum" dedik
     }, {
-      auth: { username: process.env.ZYTE_API_KEY, password: '' }
+      auth: { username: process.env.ZYTE_API_KEY, password: '' },
+      timeout: 30000 // 30 saniye sabır payı
     });
 
     const data = JSON.parse(Buffer.from(response.data.httpResponseBody, 'base64').toString());
     const guncel = data.data;
 
-    // Firebase'e sadece en güncel hali yazıyoruz (Saniyelik akış için)
+    // Firebase'e sadece en güncel hali yazıyoruz
     await db.ref('AltinGecmisi_Canli').set({
       veriler: guncel,
       sonGuncelleme: admin.database.ServerValue.TIMESTAMP
