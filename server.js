@@ -15,7 +15,12 @@ async function verileriCek() {
       url: 'https://www.haremaltin.com/dashboard/ajax/doviz',
       httpRequestMethod: 'POST',
       httpRequestBody: Buffer.from('dil_kodu=tr').toString('base64'),
-      httpResponseBody: true
+      httpResponseBody: true,
+      // Yeni eklediğimiz güvenlik aşma ayarları:
+      customHttpRequestHeaders: [
+        { "name": "referer", "value": "https://www.haremaltin.com/" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
+      ]
     }, {
       auth: { username: process.env.ZYTE_API_KEY, password: '' },
       timeout: 30000
